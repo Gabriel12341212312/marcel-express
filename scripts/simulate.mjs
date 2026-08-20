@@ -205,7 +205,7 @@ for (let frame = 0; frame < 60 * SECONDS && !caught; frame++) {
   const gy = groundHeight();
   momentum = Math.max(0, momentum - CONFIG.MOMENTUM_DECAY * DT);
   if (gy > 0.5) {
-    if (!wasOnRoof) { momentum += CONFIG.MOMENTUM_PER_MOUNT; seen.mounts++; }
+    if (!wasOnRoof) { momentum += CONFIG.MOMENTUM_PER_MOUNT; marcel.fallBack(CONFIG.MARCEL_MOUNT_BONUS); seen.mounts++; }
     seen.roofFrames++;
     momentum += CONFIG.MOMENTUM_PER_ROOF_SECOND * DT;
   }

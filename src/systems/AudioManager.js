@@ -340,6 +340,9 @@ export class AudioManager {
     }
   }
 
+  /** Landing on the freight: the one sound that means you just bought metres. */
+  mount() { this.arp([523, 784, 1046], 'triangle', 0.075, 0.05); }
+
   /** Squeezing past something: a short, soft tick. Heard often, so tiny. */
   graze() { this.arp([1568], 'sine', 0.035, 0.04); }
 

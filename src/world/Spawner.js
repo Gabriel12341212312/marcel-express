@@ -128,7 +128,9 @@ export class Spawner {
     }
     // reward the roof run
     for (const r of roofs) {
-      if (chance(0.55)) this.addPickup(createStoryPoint(), lane, r.z, r.top + 0.75);
+      // a near-continuous line of them, because this is the only invitation
+      // the player gets to try climbing onto a train in the first place
+      if (chance(0.85)) this.addPickup(createStoryPoint(), lane, r.z, r.top + 0.75);
     }
     return cursor - z;
   }

@@ -67,10 +67,15 @@ export const CONFIG = {
   // consist ends the run of them; that is what you are being paid for.
   MARCEL_ROOF_REGEN: 3.4,
 
+  // A consist takes under a second to cross, so the RATE alone yields about
+  // two metres per roof run — four percent of the gauge, which nobody can
+  // see. The felt reward has to be a lump paid the moment you land.
+  MARCEL_MOUNT_BONUS: 5.0,
+
   // Squeezing past something pays a little. Deliberately small: it should
   // make the empty lane feel like the coward's line, not become a farm.
   NEAR_MISS_MARGIN: 0.55,   // metres of clearance that still counts as close
-  NEAR_MISS_GAP: 0.35,      // metres bought off Marcel
+  NEAR_MISS_GAP: 1.5,       // metres bought off Marcel
   NEAR_MISS_POINTS: 15,
 
   // Momentum: risk builds it, a crash empties it. It multiplies the score,

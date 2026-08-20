@@ -459,7 +459,11 @@ function gameplay(dt, t) {
   // complaint is a better hint than an instruction — you learn that standing
   // up there is worth something because it is the one thing that annoys him.
   momentum = Math.max(0, momentum - CONFIG.MOMENTUM_DECAY * dt);
-  if (onRoof && roofTime === 0) momentum += CONFIG.MOMENTUM_PER_MOUNT;
+  if (onRoof && roofTime === 0) {
+    momentum += CONFIG.MOMENTUM_PER_MOUNT;
+    marcel.fallBack(CONFIG.MARCEL_MOUNT_BONUS);
+    audio.mount();
+  }
   if (onRoof) momentum += CONFIG.MOMENTUM_PER_ROOF_SECOND * dt;
   roofTime = onRoof ? roofTime + dt : 0;
   if (!taughtRoof && roofTime > 0.7) {

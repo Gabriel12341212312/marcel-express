@@ -172,10 +172,16 @@ head.
 Measured with the bot in `scripts/simulate.mjs`, which has two styles:
 
 ```
-                 distance   survived   time on roofs
-cautious play      7.7 km      223 s          0 s
-greedy play        8.7 km      248 s         24 s
+                 distance   survived   mounts
+cautious play      7.7 km      224 s        0
+greedy play       10.6 km      298 s       39
 ```
+
+Most of that is paid as a **lump the moment you land** — five metres, with a
+sound of its own — rather than as a rate. A consist takes under a second to
+cross at speed, so the rate alone yielded about two metres per roof run: four
+percent of the gauge, which is below the threshold at which anybody notices
+anything. The rate is still there for long consists; the lump is what you feel.
 
 That difference is the whole point. Before the roofs paid, every run ended
 within six seconds of every other one however well the bot played — a
@@ -202,7 +208,7 @@ The multiplier is only on screen while a streak is actually running.
 
 ```
                  distance     score   avg multiplier   mounts
-cautious play      7.6 km     12.5k        x1.0           0
+cautious play      7.7 km     14.4k        x1.0           0
 greedy play        8.8 km   20–37k     x1.65–3.33      22–35
 ```
 
