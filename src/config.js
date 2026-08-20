@@ -66,6 +66,27 @@ export const CONFIG = {
   // roofs are at different heights, and a locomotive at the head of the
   // consist ends the run of them; that is what you are being paid for.
   MARCEL_ROOF_REGEN: 3.4,
+
+  // Squeezing past something pays a little. Deliberately small: it should
+  // make the empty lane feel like the coward's line, not become a farm.
+  NEAR_MISS_MARGIN: 0.55,   // metres of clearance that still counts as close
+  NEAR_MISS_GAP: 0.35,      // metres bought off Marcel
+  NEAR_MISS_POINTS: 15,
+
+  // Momentum: risk builds it, a crash empties it. It multiplies the score,
+  // which is what stops the safe lane from being the optimal lane.
+  // It DECAYS, which is the whole point: without that it is a ratchet that
+  // even cautious play walks up to the cap, and then it separates nobody.
+  // With decay it reads as how aggressively you are playing right now.
+  MOMENTUM_PER_NEAR_MISS: 7,
+  // A consist takes barely a second to cross at speed, so the reward is for
+  // GETTING UP THERE, with a smaller rate for staying. A per-second rate
+  // alone paid almost nothing for a whole roof run.
+  MOMENTUM_PER_MOUNT: 14,
+  MOMENTUM_PER_ROOF_SECOND: 8,
+  MOMENTUM_DECAY: 3.0,       // per second
+  MOMENTUM_PER_STEP: 14,     // momentum needed per extra multiplier level
+  MOMENTUM_MAX_MULT: 5,
   MARCEL_CRASH_PENALTY: 11,
   // He is a train: he does not tire, and you do. Past MARCEL_CREEP_AT metres
   // his creep exceeds your natural regen and the gap starts closing on its

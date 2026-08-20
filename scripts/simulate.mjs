@@ -107,9 +107,14 @@ const events = new EventSystem({
 let baseSpeed = CONFIG.START_SPEED;
 let distance = 0, points = 0, storyPoints = 0, crashes = 0, t = 0;
 let caught = false, caughtAt = null;
+let momentum = 0;
+let peakMult = 1;
+let wasOnRoof = false;
+let multSum = 0, multFrames = 0;
+const scoreMult = () => Math.min(CONFIG.MOMENTUM_MAX_MULT, 1 + Math.floor(momentum / CONFIG.MOMENTUM_PER_STEP));
 const seen = {
   hit: new Set(), powerups: new Set(), variants: new Set(['MODERN']),
-  collected: 0, roofFrames: 0, crossings: 0,
+  collected: 0, roofFrames: 0, crossings: 0, nearMisses: 0, mounts: 0,
 };
 
 function groundHeight() {
@@ -186,7 +191,7 @@ for (let frame = 0; frame < 60 * SECONDS && !caught; frame++) {
   const moved = speed * DT;
 
   distance += moved;
-  points += moved * CONFIG.POINTS_PER_METER;
+  points += moved * CONFIG.POINTS_PER_METER * scoreMult();
 
   bot(speed, STYLE);
 
@@ -198,7 +203,13 @@ for (let frame = 0; frame < 60 * SECONDS && !caught; frame++) {
   });
 
   const gy = groundHeight();
-  if (gy > 0.5) seen.roofFrames++;
+  momentum = Math.max(0, momentum - CONFIG.MOMENTUM_DECAY * DT);
+  if (gy > 0.5) {
+    if (!wasOnRoof) { momentum += CONFIG.MOMENTUM_PER_MOUNT; seen.mounts++; }
+    seen.roofFrames++;
+    momentum += CONFIG.MOMENTUM_PER_ROOF_SECOND * DT;
+  }
+  wasOnRoof = gy > 0.5;
   runner.update(DT, speed, gy);
 
   // collisions — identical rules to main.js
@@ -223,8 +234,24 @@ for (let frame = 0; frame < 60 * SECONDS && !caught; frame++) {
     seen.hit.add(o.def.id ?? o.def.label);
     if (power.invincible) { o.dead = true; continue; }
     if (power.catchException()) { o.dead = true; continue; }
-    crashes++; o.hitDone = true; runner.stumble();
+    crashes++; momentum = 0; o.hitDone = true; runner.stumble();
     marcel.closeIn(HARD ? CONFIG.HARD_CRASH_PENALTY : CONFIG.MARCEL_CRASH_PENALTY);
+  }
+
+  // near misses — identical rules to main.js
+  for (const o of spawner.obstacles) {
+    if (o.missScored || o.dead || o.z > 0) continue;
+    o.missScored = true;
+    if (o.hitDone || o.kind === 'smell' || o.kind === 'bug') continue;
+    const lateral = Math.abs(runner.x - o.x) - (o.halfW + hb.halfW);
+    if (o.mountable && hb.bottom >= o.top - 0.2) continue;
+    let clearance = lateral;
+    if (lateral < 0) clearance = hb.bottom >= o.top ? hb.bottom - o.top : o.bottom - hb.top;
+    if (clearance < 0 || clearance > CONFIG.NEAR_MISS_MARGIN) continue;
+    seen.nearMisses++;
+    momentum += CONFIG.MOMENTUM_PER_NEAR_MISS;
+    points += CONFIG.NEAR_MISS_POINTS * scoreMult();
+    marcel.fallBack(CONFIG.NEAR_MISS_GAP);
   }
 
   const cx = runner.x, cy = runner.y + (runner.rolling ? 0.5 : 0.95);
@@ -239,6 +266,8 @@ for (let frame = 0; frame < 60 * SECONDS && !caught; frame++) {
     else { storyPoints += 13; points += p.value; }
   }
 
+  peakMult = Math.max(peakMult, scoreMult());
+  multSum += scoreMult(); multFrames++;
   power.update(DT);
   events.update(DT, { distance });
   const swap = marcel.updateVariant(distance);
@@ -419,6 +448,10 @@ console.log(JSON.stringify({
   framesRunningOnFreight: seen.roofFrames,
   pickups: seen.collected,
   crossings: seen.crossings,
+  nearMisses: seen.nearMisses,
+  peakMultiplier: peakMult,
+  averageMultiplier: +(multSum / multFrames).toFixed(2),
+  mounts: seen.mounts,
   marcelVariants: [...seen.variants],
   obstaclesHit: [...seen.hit],
   powerupsSeen: [...seen.powerups],

@@ -185,6 +185,27 @@ Nobody is told about it. The first time you stay up there, Marcel complains:
 *"Please do not stand on the freight."* A complaint teaches it better than an
 instruction, and he already had the line.
 
+### Near misses, and momentum
+
+Squeezing past something pays a little — a few metres off Marcel and some
+points. Clearance is measured on whichever axis you actually beat it on:
+sideways if you changed track late, vertically if you jumped a barrier or
+rolled under a gantry.
+
+Both that and getting up onto the freight feed **momentum**, which multiplies
+your score up to x5 and **empties completely when you hit something**. It
+decays at 3 a second, so it is not a lifetime total you ratchet up — it is how
+aggressively you are playing *right now*. Run the empty track all day and you
+will finish on x1.
+
+The multiplier is only on screen while a streak is actually running.
+
+```
+                 distance     score   avg multiplier   mounts
+cautious play      7.6 km     12.5k        x1.0           0
+greedy play        8.8 km   20–37k     x1.65–3.33      22–35
+```
+
 ```bash
 npm run sim -- --style=greedy
 ```

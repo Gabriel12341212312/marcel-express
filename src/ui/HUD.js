@@ -12,6 +12,7 @@ export class HUD {
     this.el = $('hud');
     this.points = $('points');
     this.dist = $('dist');
+    this.mult = $('mult');
     this.gapBar = $('gap-bar');
     this.gapText = $('gap-text');
     this.meter = document.querySelector('#marcel-meter .meter-track');
@@ -39,13 +40,17 @@ export class HUD {
     this.puSignature = '';
     this.puNodes = [];
     this.sayEl.classList.add('hidden');
+    this.mult.classList.add('hidden');
     this.setThreat(0);
     this.setGlitch(0);
   }
 
-  setStats(points, distance) {
+  setStats(points, distance, mult = 1) {
     this.points.textContent = points.toLocaleString('en-GB');
     this.dist.textContent = `${Math.floor(distance)} m`;
+    // the multiplier only exists on screen while a streak is actually running
+    this.mult.textContent = mult > 1 ? `x${mult}` : '';
+    this.mult.classList.toggle('hidden', mult <= 1);
   }
 
   /**

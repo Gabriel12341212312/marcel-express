@@ -76,6 +76,15 @@ html, body {
   color: var(--ink);
 }
 
+/* only ever on screen while a streak is actually running */
+#mult {
+  display: block;
+  margin-top: 3px;
+  font-size: 13px;
+  letter-spacing: 2px;
+  color: var(--accent);
+}
+
 #score span {
   display: block;
   margin-top: 4px;

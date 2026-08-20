@@ -90,6 +90,21 @@ let debugOn = false;
 let overlayReturn = 'RUNNING';
 let roofTime = 0;        // consecutive seconds spent up on the freight
 let taughtRoof = false;  // Marcel only complains about it once per run
+let nearMisses = 0;
+
+/**
+ * Momentum: the score multiplier, and the only thing a crash really costs.
+ *
+ * It is fed by risk and nothing else — squeezing past things, and standing up
+ * on the freight where Marcel can see you. Hitting something empties it. That
+ * is what gives the cowardly line a price: you can run the empty track all
+ * day and finish on x1.
+ */
+let momentum = 0;
+const scoreMult = () => Math.min(
+  CONFIG.MOMENTUM_MAX_MULT,
+  1 + Math.floor(momentum / CONFIG.MOMENTUM_PER_STEP)
+);
 
 // camera state, eased rather than snapped
 const cam = {
@@ -170,6 +185,8 @@ function startRun() {
   points = 0;
   storyPoints = 0;
   crashes = 0;
+  nearMisses = 0;
+  momentum = 0;
   elapsed = 0;
   catchTimer = 0;
   roofTime = 0;
@@ -275,12 +292,52 @@ function crash(o) {
     return;
   }
   crashes++;
+  momentum = 0;
   o.hitDone = true;
   audio.crash();
   runner.stumble();
   marcel.closeIn(hardMode ? CONFIG.HARD_CRASH_PENALTY : CONFIG.MARCEL_CRASH_PENALTY);
   // he comments, dryly, rather than the screen shouting
   say(Math.random() < 0.55 ? pick(CRASH_LINES) : o.def.crash, 'marcel', 3200);
+}
+
+/**
+ * Near misses.
+ *
+ * Scored the moment an obstacle passes the runner's plane. Clearance is
+ * measured on whichever axis you actually beat it on — sideways if you
+ * changed track late, vertically if you jumped a barrier or rolled under a
+ * gantry — and the smallest of those is how close you came.
+ *
+ * The payoff is small on purpose. It is not meant to be farmed; it is meant
+ * to make the empty lane feel like the coward's line, which is what stops
+ * "always take the free track" from being the whole game.
+ */
+function checkNearMisses() {
+  const hb = runner.hitbox();
+  for (const o of spawner.obstacles) {
+    if (o.missScored || o.dead || o.z > 0) continue;
+    o.missScored = true;
+    if (o.hitDone || o.kind === 'smell' || o.kind === 'bug') continue;
+
+    const ox = o.kind === 'bug' ? o.group.position.x : o.x;
+    const lateral = Math.abs(runner.x - ox) - (o.halfW + hb.halfW);
+    // riding on top of it is not a near miss, it is a roof run
+    if (o.mountable && hb.bottom >= o.top - 0.2) continue;
+
+    let clearance = lateral;
+    if (lateral < 0) {
+      // we were over or under it rather than beside it
+      clearance = hb.bottom >= o.top ? hb.bottom - o.top : o.bottom - hb.top;
+    }
+    if (clearance < 0 || clearance > CONFIG.NEAR_MISS_MARGIN) continue;
+
+    nearMisses++;
+    momentum += CONFIG.MOMENTUM_PER_NEAR_MISS;
+    points += CONFIG.NEAR_MISS_POINTS * scoreMult();
+    marcel.fallBack(CONFIG.NEAR_MISS_GAP);
+    audio.graze();
+  }
 }
 
 function checkCollisions() {
@@ -380,7 +437,7 @@ function gameplay(dt, t) {
 
   distance += moved;
   elapsed += dt;
-  points += moved * CONFIG.POINTS_PER_METER;
+  points += moved * CONFIG.POINTS_PER_METER * scoreMult();
 
   track.update(dt, moved, t);
   spawner.update(dt, moved, t, {
@@ -395,11 +452,15 @@ function gameplay(dt, t) {
   runner.updateBlink(t);
   runner.setShield(power.shield);
   checkCollisions();
+  checkNearMisses();
 
   // Teaching the roof bonus without a tutorial: the first time you stay up on
   // the freight, Marcel tells you off for it. He already had the line, and a
   // complaint is a better hint than an instruction — you learn that standing
   // up there is worth something because it is the one thing that annoys him.
+  momentum = Math.max(0, momentum - CONFIG.MOMENTUM_DECAY * dt);
+  if (onRoof && roofTime === 0) momentum += CONFIG.MOMENTUM_PER_MOUNT;
+  if (onRoof) momentum += CONFIG.MOMENTUM_PER_ROOF_SECOND * dt;
   roofTime = onRoof ? roofTime + dt : 0;
   if (!taughtRoof && roofTime > 0.7) {
     taughtRoof = true;
@@ -437,7 +498,7 @@ function gameplay(dt, t) {
   hud.setThreat(marcel.gap < CONFIG.MARCEL_TENSE_GAP
     ? (1 - marcel.gap / CONFIG.MARCEL_TENSE_GAP) * 0.8 : 0);
   hud.setGlitch(events.glitch * 0.55);
-  hud.setStats(Math.floor(points), distance);
+  hud.setStats(Math.floor(points), distance, scoreMult());
   hud.setGap(marcel.gap, CONFIG.MARCEL_MAX_GAP, marcel.gap < CONFIG.MARCEL_TENSE_GAP, gy > 0.5);
 
   if (debugOn) {

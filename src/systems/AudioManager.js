@@ -340,6 +340,9 @@ export class AudioManager {
     }
   }
 
+  /** Squeezing past something: a short, soft tick. Heard often, so tiny. */
+  graze() { this.arp([1568], 'sine', 0.035, 0.04); }
+
   coin() { this.arp([1046], 'triangle', 0.05, 0.05); }
   caught() { this.arp([523, 698], 'sine', 0.07, 0.09); }
   good() { this.arp([523, 659, 784], 'sine', 0.06, 0.08); }
