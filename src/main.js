@@ -361,11 +361,14 @@ function checkNearMisses() {
 }
 
 function checkCollisions() {
-  // airborne on the jetpack you are above every single thing on the line
-  if (runner.flying) return;
   const hb = runner.hitbox();
 
   for (const o of spawner.obstacles) {
+    // Airborne on the jetpack you are above every single thing on the line.
+    // Only the OBSTACLE pass is skipped — the pickup pass below still has to
+    // run, because the coins in the sky are the entire point of being up
+    // there, and skipping the whole function made them uncollectable.
+    if (runner.flying) break;
     if (o.hitDone || o.dead) continue;
     if (Math.abs(o.z) > o.halfD + hb.halfD) continue;
     const ox = o.kind === 'bug' ? o.group.position.x : o.x;

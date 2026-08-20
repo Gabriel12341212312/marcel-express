@@ -221,7 +221,10 @@ export class Spawner {
     const A = CONFIG.JETPACK_ALTITUDE;
     const span = CONFIG.JETPACK_COIN_SPAN;
     const step = 3.4;
-    for (let d = 14; d < span; d += step) {
+    // The climb takes about a second, so the line has to start beyond it —
+    // coins laid any closer arrive while you are still on your way up and
+    // pass underneath you.
+    for (let d = 40; d < span; d += step) {
       const t = d / span;
       // a slow sine across the three tracks, rounded to a real one
       const drift = Math.round(Math.sin(t * Math.PI * 2.2) * 1.2);
