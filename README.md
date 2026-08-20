@@ -161,6 +161,34 @@ TECHNICAL DEBT — NET 40 t   BACKUPS — UNTESTED           DEPRECATED 2011
 UNIT TESTS — EMPTY          STAGING — IDENTICAL TO PROD  TEMP — SINCE 2014
 ```
 
+### Riding the roofs buys distance
+
+Up on the freight the gap opens at **3.4 m/s instead of 1.0**. It is the only
+thing you can actively *do* about the chase, so it has to be worth the
+exposure — and it is what makes the differing roof heights matter, because
+crossing a consist means jumping between them with a locomotive waiting at the
+head.
+
+Measured with the bot in `scripts/simulate.mjs`, which has two styles:
+
+```
+                 distance   survived   time on roofs
+cautious play      7.7 km      223 s          0 s
+greedy play        8.7 km      248 s         24 s
+```
+
+That difference is the whole point. Before the roofs paid, every run ended
+within six seconds of every other one however well the bot played — a
+countdown with scenery. Now how you play decides how far you get.
+
+Nobody is told about it. The first time you stay up there, Marcel complains:
+*"Please do not stand on the freight."* A complaint teaches it better than an
+instruction, and he already had the line.
+
+```bash
+npm run sim -- --style=greedy
+```
+
 Between the freight, five trackside shapes, each asking for exactly one verb:
 
 | | | |
