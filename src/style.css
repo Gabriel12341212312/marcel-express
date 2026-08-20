@@ -104,6 +104,10 @@ html, body {
 
 .meter-track.close #gap-bar { background: var(--bad); }
 
+/* riding the freight buys distance — say so, quietly */
+.meter-track.gaining #gap-bar { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+.meter-track.gaining + .meter-label { color: var(--accent); }
+
 .meter-label {
   display: flex; justify-content: space-between;
   margin-top: 5px;

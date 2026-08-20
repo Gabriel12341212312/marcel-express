@@ -52,11 +52,13 @@ export class HUD {
    * Marcel's distance. The bar empties as he closes, because a full bar has
    * to mean "good"; it only changes colour when he is genuinely a problem.
    */
-  setGap(gap, max, close) {
+  setGap(gap, max, close, gaining = false) {
     const f = Math.max(0, Math.min(1, gap / max));
     this.gapBar.style.width = `${f * 100}%`;
     this.gapText.textContent = `${Math.max(0, Math.round(gap))} m`;
     this.meter.classList.toggle('close', close);
+    // the bar already grows while you are gaining; this makes it unmissable
+    this.meter.classList.toggle('gaining', gaining);
   }
 
   /**

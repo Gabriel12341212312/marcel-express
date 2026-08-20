@@ -58,6 +58,14 @@ export const CONFIG = {
   MARCEL_START_GAP: 46,
   MARCEL_MAX_GAP: 56,
   MARCEL_GAP_REGEN: 1.0,     // metres of breathing room earned per second
+
+  // Running the wagon roofs BUYS distance, and this is the number that makes
+  // the game a game. Without it the gap only ever moves on its own schedule
+  // and the player can lose ground but never take it — a chase you cannot
+  // fight back in is a countdown with scenery. Up here you are exposed, the
+  // roofs are at different heights, and a locomotive at the head of the
+  // consist ends the run of them; that is what you are being paid for.
+  MARCEL_ROOF_REGEN: 3.4,
   MARCEL_CRASH_PENALTY: 11,
   // He is a train: he does not tire, and you do. Past MARCEL_CREEP_AT metres
   // his creep exceeds your natural regen and the gap starts closing on its

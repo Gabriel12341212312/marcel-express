@@ -111,6 +111,7 @@ export class Marcel {
     this.z = CONFIG.MARCEL_Z_FAR;
     this.lunge = 0;
     this.wheelPhase = 0;
+    this.gaining = false;   // true while the player is actively buying metres
 
     // the look-back beat
     this.lookTimer = CONFIG.MARCEL_LOOKBACK_MIN
@@ -466,13 +467,19 @@ export class Marcel {
 
   /* ---------------------------- per-frame ---------------------------- */
 
-  update(dt, t, speed, playerX, distance = 0) {
+  update(dt, t, speed, playerX, distance = 0, onRoof = false) {
     if (this.blindFor > 0) {
       this.blindFor -= dt;
       this.gap = Math.min(CONFIG.MARCEL_MAX_GAP, this.gap + this.gapRegen * 2.6 * dt);
     } else {
       const creep = Math.min(CONFIG.MARCEL_CREEP_MAX, distance / CONFIG.MARCEL_CREEP_AT);
-      this.gap = Math.min(CONFIG.MARCEL_MAX_GAP, this.gap + (this.gapRegen - creep) * dt);
+      // Riding the freight buys distance. It is the only thing the player can
+      // DO about the chase, so it has to be worth several seconds of ordinary
+      // running — otherwise the safe lane is always the right answer and the
+      // roofs may as well not exist.
+      const regen = onRoof ? CONFIG.MARCEL_ROOF_REGEN : this.gapRegen;
+      this.gaining = regen - creep > 0.4;
+      this.gap = Math.min(CONFIG.MARCEL_MAX_GAP, this.gap + (regen - creep) * dt);
     }
 
     const s = this.safety;

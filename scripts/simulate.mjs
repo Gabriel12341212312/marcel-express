@@ -86,6 +86,7 @@ const { EventSystem } = await import(base + 'systems/EventSystem.js');
 
 const HARD = process.argv.includes('--hard');
 const SECONDS = Number(process.argv.find((a) => a.startsWith('--seconds='))?.split('=')[1]) || 300;
+const STYLE = process.argv.find((a) => a.startsWith('--style='))?.split('=')[1] ?? 'safe';
 
 const scene = new THREE.Scene();
 const track = new TrackManager(scene);
@@ -123,14 +124,23 @@ function groundHeight() {
 }
 
 /**
- * A crude bot. It looks about a second ahead, scores each lane, and moves to
- * the cheapest one — but it treats a mountable wagon as merely expensive, not
- * impossible, so the roof runs actually get exercised.
+ * Two bots, because the interesting question is not "can it survive" but
+ * "does playing well pay".
+ *
+ *   safe   — always takes the emptiest lane. Never climbs anything.
+ *   greedy — hunts standing freight, jumps onto it and rides the roofs,
+ *            because that is what buys distance off Marcel.
+ *
+ * Running both against the same rules is how you find out whether the roof
+ * bonus actually changes outcomes or just adds a number to the config.
  */
-function bot(speed) {
+function bot(speed, style) {
+  const greedy = style === 'greedy';
+  const onRoof = runner.y > 0.5;
   const look = Math.max(16, speed * 1.25);
   const cost = [0, 0, 0];
-  let needJump = false, needRoll = false;
+  let needJump = false;
+  let needRoll = false;
 
   for (const o of spawner.obstacles) {
     const front = o.z - o.halfD;
@@ -139,18 +149,28 @@ function bot(speed) {
     const lane = CONFIG.LANE_X.findIndex((x) => Math.abs(x - o.x) < 1.4);
     if (lane < 0) continue;
 
-    cost[lane] += o.kind === 'smell' ? 0.3 : o.mountable ? 0.6 : 1.4;
+    // a greedy runner WANTS the freight, so it scores as a reward, not a cost
+    if (o.kind === 'smell') cost[lane] += 0.3;
+    else if (o.mountable) cost[lane] += greedy ? -0.9 : 0.6;
+    else cost[lane] += 1.4;
+
     if (lane !== runner.targetLane) continue;
 
     if (front < speed * 0.45) {
       if (o.bottom > 0.5) needRoll = true;
       else if (o.top <= 1.05) needJump = true;
-      else if (o.mountable && runner.y < o.top - 0.3 && front < speed * 0.36) needJump = true;
+      else if (o.mountable && runner.y < o.top - 0.3) {
+        // jump early enough that the apex lands on the roof rather than the
+        // end wall — measured at roughly four tenths of a second out
+        if (front < speed * (greedy ? 0.42 : 0.36)) needJump = true;
+      }
     }
   }
 
   const best = cost.indexOf(Math.min(...cost));
-  if (cost[runner.targetLane] > cost[best] + 0.25) {
+  // never step off a roof we are being paid to stand on
+  const stay = greedy && onRoof && cost[runner.targetLane] < 0;
+  if (!stay && cost[runner.targetLane] > cost[best] + 0.25) {
     if (best < runner.targetLane) runner.moveLeft(); else runner.moveRight();
   }
   if (needRoll) runner.roll();
@@ -168,7 +188,7 @@ for (let frame = 0; frame < 60 * SECONDS && !caught; frame++) {
   distance += moved;
   points += moved * CONFIG.POINTS_PER_METER;
 
-  bot(speed);
+  bot(speed, STYLE);
 
   track.update(DT, moved, t);
   spawner.update(DT, moved, t, {
@@ -223,7 +243,7 @@ for (let frame = 0; frame < 60 * SECONDS && !caught; frame++) {
   events.update(DT, { distance });
   const swap = marcel.updateVariant(distance);
   if (swap) seen.variants.add(swap.id);
-  marcel.update(DT, t, speed, runner.x, distance);
+  marcel.update(DT, t, speed, runner.x, distance, gy > 0.5);
   if (marcel.caught) { caught = true; caughtAt = { distance, t }; }
 }
 
@@ -386,7 +406,7 @@ const cost = {
 
 console.log(JSON.stringify({
   sceneCost: cost,
-  mode: HARD ? 'hard' : 'normal',
+  mode: (HARD ? 'hard' : 'normal') + ' / ' + STYLE,
   survivedSeconds: +t.toFixed(1),
   distance: Math.round(distance),
   finalSpeed: +baseSpeed.toFixed(1),

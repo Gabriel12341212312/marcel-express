@@ -88,6 +88,8 @@ let catchTimer = 0;
 let caughtLine = '';
 let debugOn = false;
 let overlayReturn = 'RUNNING';
+let roofTime = 0;        // consecutive seconds spent up on the freight
+let taughtRoof = false;  // Marcel only complains about it once per run
 
 // camera state, eased rather than snapped
 const cam = {
@@ -170,6 +172,8 @@ function startRun() {
   crashes = 0;
   elapsed = 0;
   catchTimer = 0;
+  roofTime = 0;
+  taughtRoof = false;
 
   cam.back = CONFIG.CAM_BACK_CALM;
   cam.height = CONFIG.CAM_HEIGHT_CALM;
@@ -386,10 +390,22 @@ function gameplay(dt, t) {
   });
 
   const gy = groundHeight();
+  const onRoof = gy > 0.5;
   runner.update(dt, speed, gy);
   runner.updateBlink(t);
   runner.setShield(power.shield);
   checkCollisions();
+
+  // Teaching the roof bonus without a tutorial: the first time you stay up on
+  // the freight, Marcel tells you off for it. He already had the line, and a
+  // complaint is a better hint than an instruction — you learn that standing
+  // up there is worth something because it is the one thing that annoys him.
+  roofTime = onRoof ? roofTime + dt : 0;
+  if (!taughtRoof && roofTime > 0.7) {
+    taughtRoof = true;
+    say('Please do not stand on the freight.', 'marcel', 4200);
+    audio.speak(1.4);
+  }
 
   audio.tickRails(dt, speed);
 
@@ -408,7 +424,7 @@ function gameplay(dt, t) {
     say(swapped.arrival, 'marcel', 5200);
     audio.horn();
   }
-  marcel.update(dt, t, speed, runner.x, distance);
+  marcel.update(dt, t, speed, runner.x, distance, gy > 0.5);
   if (marcel.caught) beginCatch();
 
   /* --- feedback, all keyed off the same one number --- */
@@ -422,7 +438,7 @@ function gameplay(dt, t) {
     ? (1 - marcel.gap / CONFIG.MARCEL_TENSE_GAP) * 0.8 : 0);
   hud.setGlitch(events.glitch * 0.55);
   hud.setStats(Math.floor(points), distance);
-  hud.setGap(marcel.gap, CONFIG.MARCEL_MAX_GAP, marcel.gap < CONFIG.MARCEL_TENSE_GAP);
+  hud.setGap(marcel.gap, CONFIG.MARCEL_MAX_GAP, marcel.gap < CONFIG.MARCEL_TENSE_GAP, gy > 0.5);
 
   if (debugOn) {
     hud.setDebug(
