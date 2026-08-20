@@ -121,7 +121,10 @@ export function createPowerup(id) {
 
 /** Weighted pick. The shield is the common one; the magnet is a treat. */
 export function randomPowerupId() {
-  const table = [['EXCEPTION_HANDLER', 10], ['GIT_PUSH', 7], ['PRIMARY_KEY', 5]];
+  const table = [
+    ['EXCEPTION_HANDLER', 9], ['GIT_PUSH', 6], ['PRIMARY_KEY', 5],
+    ['SNEAKERS', 7], ['JETPACK', 5],
+  ];
   const total = table.reduce((a, [, w]) => a + w, 0);
   let r = Math.random() * total;
   for (const [id, w] of table) {

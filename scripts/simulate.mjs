@@ -116,7 +116,7 @@ let multSum = 0, multFrames = 0;
 const scoreMult = () => Math.min(CONFIG.MOMENTUM_MAX_MULT, 1 + Math.floor(momentum / CONFIG.MOMENTUM_PER_STEP));
 const seen = {
   hit: new Set(), powerups: new Set(), variants: new Set(['MODERN']),
-  collected: 0, roofFrames: 0, crossings: 0, nearMisses: 0, mounts: 0, oncoming: 0, oncomingHits: 0,
+  collected: 0, roofFrames: 0, crossings: 0, nearMisses: 0, mounts: 0, oncoming: 0, oncomingHits: 0, flights: 0, flightFrames: 0,
 };
 
 function groundHeight() {
@@ -220,6 +220,8 @@ for (let frame = 0; frame < 60 * SECONDS && !caught; frame++) {
     }
     busy ? busyFrames++ : idleFrames++;
   }
+  runner.sneakers = power.has('SNEAKERS');
+  if (runner.flying) seen.flightFrames++;
   const gy = groundHeight();
   momentum = Math.max(0, momentum - CONFIG.MOMENTUM_DECAY * DT);
   if (gy > 0.5) {
@@ -281,7 +283,11 @@ for (let frame = 0; frame < 60 * SECONDS && !caught; frame++) {
     p.taken = true;
     seen.collected++;
     if (p.kind === 'sp') { storyPoints++; points += p.value; }
-    else if (p.kind === 'powerup') { seen.powerups.add(p.def.id); power.collect(p.def.id); }
+    else if (p.kind === 'powerup') {
+      seen.powerups.add(p.def.id);
+      power.collect(p.def.id);
+      if (p.def.id === 'JETPACK') { runner.startFlight(CONFIG.DURATION_JETPACK); spawner.spawnSkyCoins(runner.targetLane); seen.flights++; }
+    }
     else { storyPoints += 13; points += p.value; }
   }
 
@@ -471,6 +477,8 @@ console.log(JSON.stringify({
   actions,
   actionsPerMinute: +((actions / t) * 60).toFixed(1),
   medianSecondsBetweenActions: +(gapsBetweenActions.sort((a, b) => a - b)[Math.floor(gapsBetweenActions.length / 2)] ?? 0).toFixed(2),
+  jetpackFlights: seen.flights,
+  secondsAirborne: +(seen.flightFrames / 60).toFixed(1),
   oncomingTrains: seen.oncoming,
   oncomingHits: seen.oncomingHits,
   nearMisses: seen.nearMisses,

@@ -333,6 +333,7 @@ function crash(o) {
  * "always take the free track" from being the whole game.
  */
 function checkNearMisses() {
+  if (runner.flying) return;
   const hb = runner.hitbox();
   for (const o of spawner.obstacles) {
     if (o.missScored || o.dead || o.z > 0) continue;
@@ -360,6 +361,8 @@ function checkNearMisses() {
 }
 
 function checkCollisions() {
+  // airborne on the jetpack you are above every single thing on the line
+  if (runner.flying) return;
   const hb = runner.hitbox();
 
   for (const o of spawner.obstacles) {
@@ -418,6 +421,12 @@ function collect(p) {
   } else if (p.kind === 'powerup') {
     const def = power.collect(p.def.id);
     audio.powerup();
+    if (p.def.id === 'JETPACK') {
+      runner.startFlight(CONFIG.DURATION_JETPACK);
+      runner.setJetpackVisible(true);
+      spawner.spawnSkyCoins(runner.targetLane);
+      audio.sweep();
+    }
     say(def.toast, 'good', 3400);
   }
 }
@@ -471,8 +480,11 @@ function gameplay(dt, t) {
     },
   });
 
+  runner.sneakers = power.has('SNEAKERS');
+  if (!runner.flying) runner.setJetpackVisible(power.has('JETPACK'));
+
   const gy = groundHeight();
-  const onRoof = gy > 0.5;
+  const onRoof = gy > 0.5 && !runner.flying;
   runner.update(dt, speed, gy);
   runner.updateBlink(t);
   runner.setShield(power.shield);
@@ -568,10 +580,10 @@ function updateCamera(dt, s) {
   const shake = (1 - s) * 0.05 + (runner.stumbling ? 0.12 : 0) + events.glitch * 0.06;
   camera.position.set(
     runner.x * 0.34 + (Math.random() - 0.5) * shake,
-    cam.height + (Math.random() - 0.5) * shake,
+    cam.height + runner.y * CONFIG.JETPACK_CAM_LIFT + (Math.random() - 0.5) * shake,
     -cam.back
   );
-  camera.lookAt(runner.x * 0.22, cam.lookY, cam.ahead);
+  camera.lookAt(runner.x * 0.22, cam.lookY + runner.y * CONFIG.JETPACK_CAM_LIFT * 0.8, cam.ahead);
 
   // the lens narrows as he closes, which is most of how his approach reads
   const fovTarget = lerp(CONFIG.FOV_TENSE, CONFIG.FOV_CALM, s);

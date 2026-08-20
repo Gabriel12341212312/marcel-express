@@ -209,6 +209,27 @@ export class Spawner {
     return true;
   }
 
+  /**
+   * Lay a line of story points through the sky for the jetpack to fly along.
+   *
+   * It waves gently across the tracks rather than running dead straight, so
+   * the flight is still steering rather than a cutscene you watch — and it
+   * starts close, because the climb takes about a second and the coins have to
+   * be there when you arrive.
+   */
+  spawnSkyCoins(lane) {
+    const A = CONFIG.JETPACK_ALTITUDE;
+    const span = CONFIG.JETPACK_COIN_SPAN;
+    const step = 3.4;
+    for (let d = 14; d < span; d += step) {
+      const t = d / span;
+      // a slow sine across the three tracks, rounded to a real one
+      const drift = Math.round(Math.sin(t * Math.PI * 2.2) * 1.2);
+      const l = Math.max(0, Math.min(2, lane + drift));
+      this.addPickup(createStoryPoint(), l, d, A + Math.sin(t * Math.PI * 4) * 0.5);
+    }
+  }
+
   /* ---------------------------- patterns ---------------------------- */
 
   /** One set-up. Returns the lanes that stayed clear. */

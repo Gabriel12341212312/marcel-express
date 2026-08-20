@@ -208,6 +208,14 @@ export const POWERUPS = {
     id: 'GIT_PUSH', label: 'git push', short: 'PUSH', color: 0xffa04a,
     toast: 'git push — the line clears itself for a while.',
   },
+  SNEAKERS: {
+    id: 'SNEAKERS', label: 'steel toecaps', short: 'JUMP', color: 0x9ae06a,
+    toast: 'Steel toecaps. You can clear anything on this line now.',
+  },
+  JETPACK: {
+    id: 'JETPACK', label: 'deploy --airborne', short: 'JET', color: 0xff8a4a,
+    toast: 'Straight up. Mind the overhead line.',
+  },
   PRIMARY_KEY: {
     id: 'PRIMARY_KEY', label: 'PRIMARY KEY', short: 'PK', color: 0xffd54a,
     toast: 'PRIMARY KEY — everything joins to you now.',

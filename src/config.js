@@ -57,7 +57,7 @@ export const CONFIG = {
   // the number and the picture never disagree.
   MARCEL_START_GAP: 46,
   MARCEL_MAX_GAP: 56,
-  MARCEL_GAP_REGEN: 1.0,     // metres of breathing room earned per second
+  MARCEL_GAP_REGEN: 0.85,    // metres of breathing room earned per second
 
   // Running the wagon roofs BUYS distance, and this is the number that makes
   // the game a game. Without it the gap only ever moves on its own schedule
@@ -92,12 +92,12 @@ export const CONFIG = {
   MOMENTUM_DECAY: 3.0,       // per second
   MOMENTUM_PER_STEP: 14,     // momentum needed per extra multiplier level
   MOMENTUM_MAX_MULT: 5,
-  MARCEL_CRASH_PENALTY: 11,
+  MARCEL_CRASH_PENALTY: 20,   // ~2 Treffer, nicht 4
   // He is a train: he does not tire, and you do. Past MARCEL_CREEP_AT metres
   // his creep exceeds your natural regen and the gap starts closing on its
   // own. This is what turns a calm run into a tense one without ever making
   // the line itself more crowded.
-  MARCEL_CREEP_AT: 5200,
+  MARCEL_CREEP_AT: 3800,
   MARCEL_CREEP_MAX: 2.4,
   MARCEL_SMELL_PENALTY: 4,
 
@@ -129,7 +129,7 @@ export const CONFIG = {
   /* ---------------------------- hard mode ---------------------------- */
   HARD_START_GAP: 32,
   HARD_GAP_REGEN: 0.72,
-  HARD_CRASH_PENALTY: 14,
+  HARD_CRASH_PENALTY: 24,
   HARD_SPEED_RAMP: 0.30,
   HARD_SPAWN_MULT: 1.22,
 
@@ -166,13 +166,13 @@ export const CONFIG = {
 
   /* ---------------------------- spawning ---------------------------- */
   SPAWN_START_METERS: 120,
-  PATTERN_GAP_MIN: 16,       // metres between set-ups at start speed
-  PATTERN_GAP_MAX: 30,
-  PATTERN_GAP_FLOOR: 11,
+  PATTERN_GAP_MIN: 12,       // metres between set-ups at start speed
+  PATTERN_GAP_MAX: 22,
+  PATTERN_GAP_FLOOR: 9,
   // The line itself gets denser as you go. Difficulty used to come only from
   // Marcel closing in, which is a timer you watch rather than something you
   // play against — the track never asked more of you at 8 km than at 1 km.
-  DENSITY_AT: 6000,          // metres at which set-ups come twice as often
+  DENSITY_AT: 4500,          // metres at which set-ups come twice as often
 
   FREIGHT_SHARE: 0.45,       // share of set-ups that are standing freight
   POWERUP_CHANCE: 0.09,
@@ -200,6 +200,19 @@ export const CONFIG = {
   CROSSING_MAX_METERS: 2200,
 
   /* ---------------------------- power-ups ---------------------------- */
+  // Super sneakers: a jump high enough to clear anything on the line,
+  // including a train coming the other way (3.1 m).
+  DURATION_SNEAKERS: 9,
+  SNEAKER_JUMP_MULT: 1.8,
+
+  // Jetpack: straight up, cruise above the catenary, then back down.
+  DURATION_JETPACK: 7.5,
+  JETPACK_ALTITUDE: 9.6,     // above the contact wires at 8.6 and the boom at 9.2
+  JETPACK_CLIMB: 9.0,        // metres per second up
+  JETPACK_FALL: 7.0,
+  JETPACK_CAM_LIFT: 0.55,    // how much the camera follows you up
+  JETPACK_COIN_SPAN: 240,    // metres of coin line laid out ahead of you
+
   DURATION_GIT_PUSH: 6.5,
   DURATION_MAGNET: 12,
   GIT_PUSH_SPEED_MULT: 1.35,

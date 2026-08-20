@@ -6,6 +6,8 @@ import { CONFIG } from '../config.js';
 import { POWERUPS } from '../data/lines.js';
 
 const TOTALS = {
+  SNEAKERS: CONFIG.DURATION_SNEAKERS,
+  JETPACK: CONFIG.DURATION_JETPACK,
   GIT_PUSH: CONFIG.DURATION_GIT_PUSH,
   PRIMARY_KEY: CONFIG.DURATION_MAGNET,
 };

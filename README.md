@@ -303,6 +303,28 @@ That is the whole list.
 | `try / catch` | swallows exactly one mistake, quietly |
 | `git push` | the line clears itself for a few seconds |
 | `PRIMARY KEY` | every story point in range joins to you |
+| `steel toecaps` | jump 4.98 m instead of 1.54 — over anything, including a train coming the other way |
+| `deploy --airborne` | the jetpack |
+
+### The jetpack
+
+Straight up to 9.6 m — over the contact wires at 8.6 and the gantry boom at
+9.2 — cruise for seven seconds, then back down. Nothing on the line can touch
+you up there, and a line of story points is laid out ahead of you, waving
+gently across the three tracks so it is still steering rather than a cutscene.
+
+The pose does the work, and it is three attitudes rather than one:
+
+```
+ 0.00 s   climb     y 0.15    pitch −31°   leaning back into the thrust
+ 1.05 s   cruise    y 9.60    pitch +50°   belly down, arms swept past the hips
+ 8.57 s   descend   y 9.63                 pulling upright again
+ 9.95 s   landed    y 0.00    pitch  −7°   feet back on the ballast
+```
+
+Fifty degrees, not flat — enough to read as flying rather than as falling
+forwards. The thrust runs longest on the climb, eases at cruise, and drops to
+a trickle on the way down.
 
 ---
 

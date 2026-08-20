@@ -47,6 +47,11 @@ export class Runner {
     this.onTopOf = null;      // obstacle we are currently standing on
     this.dead = false;
 
+    this.flying = false;
+    this.flightPhase = 'climb';
+    this.flightTime = 0;
+    this.sneakers = false;
+
     this.runPhase = 0;
     this.tilt = 0;
     this.buildModel();
@@ -136,6 +141,28 @@ export class Runner {
     const pack = box(0.42, 0.44, 0.18, 0x3a3f4a);
     pack.position.set(0, 0.3, -0.24);
     this.hips.add(pack);
+
+    // The jetpack bolts onto the same backpack, so it appears where the bag
+    // already was rather than materialising out of nowhere.
+    this.jetpack = new THREE.Group();
+    this.jetpack.visible = false;
+    pack.add(this.jetpack);
+    this.flames = [];
+    const flameMat = new THREE.MeshBasicMaterial({
+      color: 0xffb04a, transparent: true, opacity: 0, depthWrite: false,
+      side: THREE.DoubleSide, toneMapped: false,
+    });
+    for (const s of [-1, 1]) {
+      const tube = box(0.13, 0.5, 0.13, 0x6a7078);
+      tube.position.set(s * 0.17, -0.02, -0.12);
+      this.jetpack.add(tube);
+
+      const flame = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 1.0), flameMat.clone());
+      flame.position.set(s * 0.17, -0.62, -0.12);
+      flame.visible = false;
+      this.jetpack.add(flame);
+      this.flames.push(flame);
+    }
     const sticker = new THREE.Mesh(
       new THREE.PlaneGeometry(0.26, 0.26),
       new THREE.MeshBasicMaterial({ color: 0x8fe04a })
@@ -178,12 +205,30 @@ export class Runner {
   }
 
   jump() {
-    if (this.dead || this.jumping) return false;
+    if (this.dead || this.jumping || this.flying) return false;
     this.jumping = true;
     this.rolling = false;
     this.rollTimer = 0;
-    this.vy = CONFIG.JUMP_VELOCITY;
+    this.vy = CONFIG.JUMP_VELOCITY * (this.sneakers ? CONFIG.SNEAKER_JUMP_MULT : 1);
     return true;
+  }
+
+  /**
+   * Take off. The flight then runs itself: climb, cruise, descend.
+   *
+   *   climb   — nose up, legs trailing, the thrust doing the work
+   *   cruise  — moderately belly-down with the arms swept back, which is the
+   *             pose that reads as flying rather than as levitating
+   *   descend — back upright, feet reaching for the ballast
+   */
+  startFlight(seconds) {
+    this.flying = true;
+    this.flightPhase = 'climb';
+    this.flightTime = seconds;
+    this.rolling = false;
+    this.rollTimer = 0;
+    this.jumping = false;
+    this.vy = 0;
   }
 
   roll() {
@@ -226,6 +271,29 @@ export class Runner {
    * @param {number} speed   current forward speed (drives the run cycle)
    * @param {number} groundY height of whatever is under us (0 = the track)
    */
+  /** Climb, cruise and descend. Returns true while the jetpack still owns us. */
+  updateFlight(dt) {
+    const A = CONFIG.JETPACK_ALTITUDE;
+    if (this.flightPhase === 'climb') {
+      this.y = Math.min(A, this.y + CONFIG.JETPACK_CLIMB * dt);
+      if (this.y >= A - 0.01) this.flightPhase = 'cruise';
+    } else if (this.flightPhase === 'cruise') {
+      this.y += (A - this.y) * Math.min(1, dt * 4)
+        + Math.sin(this.runPhase * 0.5) * 0.004;   // a slow drift, so it breathes
+      this.flightTime -= dt;
+      if (this.flightTime <= 0) this.flightPhase = 'descend';
+    } else {
+      this.y = Math.max(0, this.y - CONFIG.JETPACK_FALL * dt);
+      if (this.y <= 0) {
+        this.y = 0;
+        this.flying = false;
+        this.vy = 0;
+        return false;
+      }
+    }
+    return true;
+  }
+
   update(dt, speed, groundY = 0) {
     if (this.rollTimer > 0) {
       this.rollTimer -= dt;
@@ -248,15 +316,20 @@ export class Runner {
     const targetTilt = THREE.MathUtils.clamp(-dx * 0.22, -0.3, 0.3);
     this.tilt += (targetTilt - this.tilt) * Math.min(1, dt * 12);
 
-    // vertical
-    this.vy -= CONFIG.GRAVITY * dt;
-    this.y += this.vy * dt;
-    if (this.y <= groundY) {
-      this.y = groundY;
-      this.vy = 0;
+    // vertical — the jetpack overrides gravity entirely while it lasts
+    if (this.flying) {
+      this.updateFlight(dt);
       this.jumping = false;
     } else {
-      this.jumping = true;
+      this.vy -= CONFIG.GRAVITY * dt;
+      this.y += this.vy * dt;
+      if (this.y <= groundY) {
+        this.y = groundY;
+        this.vy = 0;
+        this.jumping = false;
+      } else {
+        this.jumping = true;
+      }
     }
 
     this.animate(dt, speed);
@@ -270,6 +343,11 @@ export class Runner {
     const airborne = this.jumping;
     this.runPhase += dt * (3.4 + speed * 0.30);
     const p = this.runPhase;
+
+    if (this.flying) {
+      this.animateFlight(dt, p);
+      return;
+    }
 
     if (this.rolling) {
       // tuck: fold the whole body forward and spin it
@@ -328,6 +406,68 @@ export class Runner {
     this.head.rotation.y = Math.sin(p * 0.5) * 0.06;
   }
 
+  /**
+   * The flight pose.
+   *
+   * Three attitudes, blended by phase, because the transitions are most of
+   * what sells it:
+   *
+   *   climb   — leaning back into the thrust, legs trailing, arms down
+   *   cruise  — moderately belly-down, arms swept back past the hips, legs
+   *             straight out behind. Not face-flat: about fifty degrees,
+   *             which reads as flying rather than as falling forwards
+   *   descend — pulled upright again with the feet reaching down
+   */
+  animateFlight(dt, p) {
+    const A = CONFIG.JETPACK_ALTITUDE;
+    let pitch;
+    let legSwing;
+    if (this.flightPhase === 'climb') {
+      const t = Math.min(1, this.y / A);
+      pitch = -0.55 + t * 0.30;            // nose up, easing over as it levels
+      legSwing = -0.5 - t * 0.5;
+    } else if (this.flightPhase === 'cruise') {
+      pitch = 0.90;                        // ~50 degrees, belly toward the line
+      legSwing = -1.15;
+    } else {
+      const t = Math.min(1, this.y / A);
+      pitch = 0.90 * t;                    // stand back up as the ground returns
+      legSwing = -1.15 * t;
+    }
+
+    // a slow wallow, so cruising is not a frozen pose
+    const wallow = Math.sin(p * 0.9) * 0.05;
+    this.body.rotation.x = pitch + wallow;
+    this.hips.position.y = 0.92;
+    this.head.rotation.x = -pitch * 0.55;   // he keeps looking where he is going
+
+    for (const l of this.legs) {
+      l.hip.rotation.x = legSwing + Math.sin(p * 1.6 + l.side) * 0.07;
+      l.knee.rotation.x = 0.22;
+    }
+    for (const a of this.arms) {
+      a.shoulder.rotation.x = 1.55 + Math.sin(p * 1.4 + a.side) * 0.09;  // swept back
+      a.shoulder.rotation.z = a.side * 0.34;
+      a.elbow.rotation.x = -0.28;
+    }
+
+    // thrust: two flames under the pack, longest on the climb
+    const push = this.flightPhase === 'climb' ? 1
+      : this.flightPhase === 'cruise' ? 0.62 : 0.30;
+    for (let i = 0; i < this.flames.length; i++) {
+      const f = this.flames[i];
+      const flicker = 0.82 + Math.sin(p * 26 + i * 2.1) * 0.18;
+      f.visible = true;
+      f.scale.set(0.42 * flicker, (0.55 + push * 1.5) * flicker, 1);
+      f.material.opacity = (0.5 + push * 0.5) * flicker;
+    }
+  }
+
+  setJetpackVisible(on) {
+    this.jetpack.visible = on;
+    if (!on) for (const f of this.flames) f.visible = false;
+  }
+
   setShield(on) {
     this.shield.visible = on;
   }
@@ -357,6 +497,10 @@ export class Runner {
     this.stumbleTimer = 0;
     this.invulnTimer = 0;
     this.dead = false;
+    this.flying = false;
+    this.flightPhase = 'climb';
+    this.flightTime = 0;
+    this.sneakers = false;
     this.onTopOf = null;
     this.runPhase = 0;
     this.tilt = 0;
@@ -365,5 +509,6 @@ export class Runner {
     this.group.position.set(this.x, 0, 0);
     this.group.rotation.set(0, 0, 0);
     this.shield.visible = false;
+    this.setJetpackVisible(false);
   }
 }
