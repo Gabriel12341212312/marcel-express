@@ -1,0 +1,21 @@
+{
+  "name": "marcel-express",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "A quiet endless runner along a freight line, pursued by a locomotive that used to teach IT.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "sim": "node scripts/simulate.mjs",
+    "gen:enemy": "node scripts/generate-marcel-placeholder.js"
+  },
+  "dependencies": {
+    "simplex-noise": "^4.0.1",
+    "three": "^0.160.0"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  }
+}

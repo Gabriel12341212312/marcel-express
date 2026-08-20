@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#131a1e" />
+  <meta name="description" content="MARCEL EXPRESS - a quiet endless runner along a freight line, pursued by a locomotive that used to teach IT." />
+  <title>Marcel Express</title>
+  <link rel="icon" href="/marcel.png" />
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="app"></div>
+
+  <div id="fx">
+    <div id="vignette"></div>
+    <div id="threat"></div>
+    <div id="glitch"></div>
+  </div>
+
+  <!-- The HUD is three things: score, how far back Marcel is, and whatever
+       power-up you are holding. Everything else happens in the world. -->
+  <div id="hud" class="hidden">
+    <div id="score">
+      <b id="points">0</b>
+      <span id="dist">0 m</span>
+    </div>
+
+    <div id="marcel-meter">
+      <div class="meter-track"><div id="gap-bar"></div></div>
+      <div class="meter-label"><span>marcel</span><span id="gap-text">46 m</span></div>
+    </div>
+
+    <div id="powerups"></div>
+    <div id="say" class="hidden"></div>
+    <div id="debug" class="hidden"></div>
+  </div>
+
+  <div id="terminal" class="hidden">
+    <div id="term-out"></div>
+    <div id="term-line"><span class="prompt">student@marcel:~$</span><span id="term-input"></span><span class="caret">_</span></div>
+  </div>
+
+  <!-- ------------------------------- menus ------------------------------- -->
+
+  <div id="menu" class="overlay">
+    <div class="panel">
+      <div class="titleblock">
+        <img src="/marcel.png" alt="Marcel" class="portrait" />
+        <div>
+          <h1>MARCEL<span>EXPRESS</span></h1>
+          <p class="tagline">an endless runner along a freight line</p>
+        </div>
+      </div>
+
+      <p class="flavor">
+        Marcel taught IT for eleven years. He is now a locomotive. He does not
+        discuss how, and he does not consider it worth discussing.
+      </p>
+      <p class="flavor">
+        He is on the line behind you, hauling something he will not name.
+        Three tracks. Standing freight. Keep ahead of him.
+      </p>
+
+      <div class="keys">
+        <span><kbd>&larr;</kbd><kbd>&rarr;</kbd> change track</span>
+        <span><kbd>&uarr;</kbd> jump</span>
+        <span><kbd>&darr;</kbd> roll</span>
+        <span><kbd>esc</kbd> pause</span>
+      </div>
+
+      <button id="btn-start" class="btn">Depart</button>
+      <button id="btn-hard" class="btn ghost">Hard Mode: OFF</button>
+
+      <div class="settings">
+        <label>Volume <input id="vol" type="range" min="0" max="1" step="0.05" value="0.7" /></label>
+        <div class="hiscore">best <b id="hiscore">0</b></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="pause" class="overlay hidden">
+    <div class="panel">
+      <h2>STOPPED</h2>
+      <p class="flavor">Marcel is not stopped. He is waiting on a signal.</p>
+      <button id="btn-resume" class="btn">Continue</button>
+      <button id="btn-quit" class="btn ghost">End the run</button>
+    </div>
+  </div>
+
+  <div id="gameover" class="overlay hidden">
+    <div class="panel">
+      <h2>RETROSPECTIVE</h2>
+      <p class="quote" id="go-line"></p>
+      <div class="retro-stats" id="go-stats"></div>
+      <div class="retro-grid">
+        <div><b>What went well</b><span id="retro-good"></span></div>
+        <div><b>What went badly</b><span id="retro-bad"></span></div>
+        <div><b>Why was Marcel faster</b><span id="retro-why"></span></div>
+      </div>
+      <div id="go-new" class="hidden">new personal best</div>
+      <button id="btn-restart" class="btn">Again</button>
+      <button id="btn-menu" class="btn ghost">Back</button>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
