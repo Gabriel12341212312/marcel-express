@@ -110,6 +110,8 @@ let caught = false, caughtAt = null;
 let momentum = 0;
 let peakMult = 1;
 let wasOnRoof = false;
+let idleFrames = 0, busyFrames = 0, actions = 0, lastActionT = 0;
+const gapsBetweenActions = [];
 let multSum = 0, multFrames = 0;
 const scoreMult = () => Math.min(CONFIG.MOMENTUM_MAX_MULT, 1 + Math.floor(momentum / CONFIG.MOMENTUM_PER_STEP));
 const seen = {
@@ -193,7 +195,11 @@ for (let frame = 0; frame < 60 * SECONDS && !caught; frame++) {
   distance += moved;
   points += moved * CONFIG.POINTS_PER_METER * scoreMult();
 
+  const laneBefore = runner.targetLane, yBefore = runner.vy, rollBefore = runner.rolling;
   bot(speed, STYLE);
+  if (runner.targetLane !== laneBefore || runner.vy > yBefore + 1 || (runner.rolling && !rollBefore)) {
+    actions++; gapsBetweenActions.push(t - lastActionT); lastActionT = t;
+  }
 
   track.update(DT, moved, t);
   spawner.update(DT, moved, t, {
@@ -202,6 +208,15 @@ for (let frame = 0; frame < 60 * SECONDS && !caught; frame++) {
     onCrossing: () => { seen.crossings++; },
   });
 
+  {
+    const window_ = speed * 1.6;   // roughly what a player can react to
+    let busy = false;
+    for (const o of spawner.obstacles) {
+      const front = o.z - o.halfD;
+      if (front > 0 && front < window_) { busy = true; break; }
+    }
+    busy ? busyFrames++ : idleFrames++;
+  }
   const gy = groundHeight();
   momentum = Math.max(0, momentum - CONFIG.MOMENTUM_DECAY * DT);
   if (gy > 0.5) {
@@ -448,6 +463,10 @@ console.log(JSON.stringify({
   framesRunningOnFreight: seen.roofFrames,
   pickups: seen.collected,
   crossings: seen.crossings,
+  deadAirPercent: +((idleFrames / (idleFrames + busyFrames)) * 100).toFixed(1),
+  actions,
+  actionsPerMinute: +((actions / t) * 60).toFixed(1),
+  medianSecondsBetweenActions: +(gapsBetweenActions.sort((a, b) => a - b)[Math.floor(gapsBetweenActions.length / 2)] ?? 0).toFixed(2),
   nearMisses: seen.nearMisses,
   peakMultiplier: peakMult,
   averageMultiplier: +(multSum / multFrames).toFixed(2),

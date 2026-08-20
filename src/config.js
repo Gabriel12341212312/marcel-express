@@ -97,7 +97,7 @@ export const CONFIG = {
   // his creep exceeds your natural regen and the gap starts closing on its
   // own. This is what turns a calm run into a tense one without ever making
   // the line itself more crowded.
-  MARCEL_CREEP_AT: 3600,
+  MARCEL_CREEP_AT: 5200,
   MARCEL_CREEP_MAX: 2.4,
   MARCEL_SMELL_PENALTY: 4,
 
@@ -166,9 +166,14 @@ export const CONFIG = {
 
   /* ---------------------------- spawning ---------------------------- */
   SPAWN_START_METERS: 120,
-  PATTERN_GAP_MIN: 34,       // metres between set-ups at start speed
-  PATTERN_GAP_MAX: 62,
-  PATTERN_GAP_FLOOR: 20,
+  PATTERN_GAP_MIN: 16,       // metres between set-ups at start speed
+  PATTERN_GAP_MAX: 30,
+  PATTERN_GAP_FLOOR: 11,
+  // The line itself gets denser as you go. Difficulty used to come only from
+  // Marcel closing in, which is a timer you watch rather than something you
+  // play against — the track never asked more of you at 8 km than at 1 km.
+  DENSITY_AT: 6000,          // metres at which set-ups come twice as often
+
   FREIGHT_SHARE: 0.45,       // share of set-ups that are standing freight
   POWERUP_CHANCE: 0.09,
   GLOW_CARD_CHANCE: 0.04,

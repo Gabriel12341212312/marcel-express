@@ -231,6 +231,35 @@ drifting across the tracks, which is the one thing you are supposed to hit.
 Every 1–2 km there is a **level crossing**, and a very long freight sweeping
 across it ahead of you. It always clears in time. It is there to be looked at.
 
+### The line gets denser, not just the locomotive
+
+Difficulty used to come only from Marcel closing in — a timer you watch rather
+than something you play against. The track asked no more of you at 8 km than it
+did at 1 km. Now the set-ups tighten as you go:
+
+```
+    0 m   a set-up every 1.44 s
+ 2000 m                  1.08 s
+ 4000 m                  0.86 s
+ 8000 m                  0.62 s
+```
+
+That also fixed the real problem behind "it is boring", which turned out to be
+measurable rather than a matter of taste:
+
+```
+                 dead air   actions/min   crashes
+before              47.8%          14.7       0-1
+after              8 – 13%        28 – 30       5-6
+```
+
+**Dead air** is the share of the run with nothing inside reaction distance —
+half the game was holding forward down an empty line, one input every four
+seconds. Comparable runners sit at 40–60 actions a minute.
+
+Marcel's creep was pushed out from 3600 m to 5200 m in exchange, so the
+pressure now comes from the line instead of from a clock.
+
 ---
 
 ## Three power-ups

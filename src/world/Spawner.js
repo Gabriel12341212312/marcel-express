@@ -355,6 +355,8 @@ export class Spawner {
       let gap = (CONFIG.PATTERN_GAP_MIN
         + Math.random() * (CONFIG.PATTERN_GAP_MAX - CONFIG.PATTERN_GAP_MIN)) * scale;
       gap /= this.density * (ctx.hard ? CONFIG.HARD_SPAWN_MULT : 1);
+      // and the further you get, the less rest you are given
+      gap /= 1 + ctx.distance / CONFIG.DENSITY_AT;
       gap = Math.max(CONFIG.PATTERN_GAP_FLOOR * scale, gap);
       // a long consist has to be cleared before the next thing appears
       this.nextObstacleZ = this.horizon + 10 + (this.consistTail || 0) + gap;
