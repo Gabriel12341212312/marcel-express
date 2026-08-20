@@ -116,7 +116,7 @@ let multSum = 0, multFrames = 0;
 const scoreMult = () => Math.min(CONFIG.MOMENTUM_MAX_MULT, 1 + Math.floor(momentum / CONFIG.MOMENTUM_PER_STEP));
 const seen = {
   hit: new Set(), powerups: new Set(), variants: new Set(['MODERN']),
-  collected: 0, roofFrames: 0, crossings: 0, nearMisses: 0, mounts: 0,
+  collected: 0, roofFrames: 0, crossings: 0, nearMisses: 0, mounts: 0, oncoming: 0, oncomingHits: 0,
 };
 
 function groundHeight() {
@@ -151,13 +151,15 @@ function bot(speed, style) {
 
   for (const o of spawner.obstacles) {
     const front = o.z - o.halfD;
-    if (front < 0.5 || front > look) continue;
+    // an oncoming train closes twice as fast, so look twice as far for it
+    if (front < 0.5 || front > (o.family === 'oncoming' ? look * 2.6 : look)) continue;
     if (o.kind === 'bug') continue;
     const lane = CONFIG.LANE_X.findIndex((x) => Math.abs(x - o.x) < 1.4);
     if (lane < 0) continue;
 
     // a greedy runner WANTS the freight, so it scores as a reward, not a cost
-    if (o.kind === 'smell') cost[lane] += 0.3;
+    if (o.family === 'oncoming') cost[lane] += 40;   // never, under any circumstances
+    else if (o.kind === 'smell') cost[lane] += 0.3;
     else if (o.mountable) cost[lane] += greedy ? -0.9 : 0.6;
     else cost[lane] += 1.4;
 
@@ -206,6 +208,7 @@ for (let frame = 0; frame < 60 * SECONDS && !caught; frame++) {
     distance, speed, hard: HARD,
     magnet: power.magnet, runnerX: runner.x, runnerY: runner.y,
     onCrossing: () => { seen.crossings++; },
+    onOncoming: () => { seen.oncoming++; },
   });
 
   {
@@ -250,6 +253,7 @@ for (let frame = 0; frame < 60 * SECONDS && !caught; frame++) {
     if (power.invincible) { o.dead = true; continue; }
     if (power.catchException()) { o.dead = true; continue; }
     crashes++; momentum = 0; o.hitDone = true; runner.stumble();
+    if (o.family === 'oncoming') seen.oncomingHits++;
     marcel.closeIn(HARD ? CONFIG.HARD_CRASH_PENALTY : CONFIG.MARCEL_CRASH_PENALTY);
   }
 
@@ -467,6 +471,8 @@ console.log(JSON.stringify({
   actions,
   actionsPerMinute: +((actions / t) * 60).toFixed(1),
   medianSecondsBetweenActions: +(gapsBetweenActions.sort((a, b) => a - b)[Math.floor(gapsBetweenActions.length / 2)] ?? 0).toFixed(2),
+  oncomingTrains: seen.oncoming,
+  oncomingHits: seen.oncomingHits,
   nearMisses: seen.nearMisses,
   peakMultiplier: peakMult,
   averageMultiplier: +(multSum / multFrames).toFixed(2),

@@ -272,6 +272,79 @@ function crashLineFor(kind) {
 }
 
 /**
+ * A train coming the other way.
+ *
+ * Unlike everything else on the line this one moves, and it closes at its own
+ * speed on top of yours — so it arrives far faster than the scenery does. It
+ * occupies exactly one track and cannot be climbed: the only answer is to not
+ * be there when it arrives.
+ *
+ * The headlamp is the whole design. Fog closes at 190 m, so the machine itself
+ * stays hidden until about three seconds out; the lamps are drawn with fog
+ * DISABLED and additive, which means you can see which track it is on long
+ * before you can see the train. That, plus the horn, is the warning.
+ */
+export function createOncomingTrain(wagonCount = 10) {
+  const g = new THREE.Group();
+  const locoLen = 8.6;
+
+  // the locomotive leads, turned to face back down the line at you
+  const loco = new THREE.Group();
+  loco.add(new THREE.Mesh(chassisGeometry(locoLen), steelMat()));
+  const body = geo(`onBody:${locoLen}`, () => parts()
+    .add(box(WIDTH + 0.1, 1.5, locoLen - 1.4), [0, 1.5, 0])
+    .add(box(WIDTH - 0.2, 0.8, 2.4), [0, 2.62, -1.0])
+    .bake());
+  loco.add(new THREE.Mesh(body, mat('onLoco', () => new THREE.MeshLambertMaterial({
+    map: locoBodyTexture('MODERN'),
+  }))));
+  loco.rotation.y = Math.PI;
+  g.add(loco);
+
+  // the lamps: unfogged and additive, so they burn through the haze
+  const lampMat = mat('onLamp', () => new THREE.SpriteMaterial({
+    map: glowSprite(0xfff2d0),
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    transparent: true,
+    fog: false,
+  }));
+  const lamps = [];
+  for (const s of [-1, 1]) {
+    const lamp = new THREE.Sprite(lampMat);
+    lamp.scale.setScalar(4.5);
+    lamp.position.set(s * 0.95, 1.5, -locoLen / 2 - 0.4);
+    g.add(lamp);
+    lamps.push(lamp);
+  }
+
+  // its consist trails away behind it
+  let z = locoLen / 2 + 0.6;
+  for (let i = 0; i < wagonCount; i++) {
+    const kind = randomWagonKind();
+    const w = createWagon(kind);
+    w.group.position.z = z + WAGONS[kind].len / 2;
+    g.add(w.group);
+    z += WAGONS[kind].len + 0.55;
+  }
+
+  return {
+    group: g,
+    kind: 'obstacle',
+    family: 'oncoming',
+    def: { id: 'ONCOMING', label: 'ONCOMING', crash: 'That one was coming the other way.' },
+    halfW: HALF_W + 0.08,
+    halfD: z / 2,
+    bottom: 0,
+    top: 3.1,
+    mountable: false,     // you do not board a train doing 26 m/s at you
+    zOffset: z / 2 - locoLen / 2,
+    length: z,
+    lamps,
+  };
+}
+
+/**
  * A locomotive standing on the line. Taller than a wagon and NOT mountable,
  * so a consist headed by one always forces a decision at the end of the roof
  * run: drop off early or change lane.

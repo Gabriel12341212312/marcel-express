@@ -231,6 +231,33 @@ drifting across the tracks, which is the one thing you are supposed to hit.
 Every 1–2 km there is a **level crossing**, and a very long freight sweeping
 across it ahead of you. It always clears in time. It is there to be looked at.
 
+### Trains you can run, and trains you cannot
+
+Two kinds of rake, and they feel nothing alike.
+
+**Mixed stock** puts every roof at a different height, so crossing it is a
+series of jumps — the shunted-together freight nobody has sorted.
+
+**A uniform rake** is one wagon type end to end: a single flat surface six to
+eleven wagons long. One jump on, then just run, with story points the whole
+way. About two freight set-ups in five.
+
+**A train coming the other way** takes one track and closes at its own speed on
+top of yours — around 56 m/s, roughly twice as fast as anything else arrives.
+It cannot be climbed or ducked. The only answer is to not be there.
+
+It is also the one thing in the game with a real warning, because it has to be:
+
+- the **horn** sounds the moment it enters the line
+- its **lamps are drawn with fog disabled**, so you can see which track it is on
+  long before the fog gives up the train itself
+- it only takes a track that is clear for the whole approach, so it never
+  appears behind freight you cannot get past
+- nothing else spawns while it is inbound — you are solving one problem
+
+Measured over full runs: four to nine of them, and the cautious bot was hit by
+exactly **none**.
+
 ### The line gets denser, not just the locomotive
 
 Difficulty used to come only from Marcel closing in — a timer you watch rather

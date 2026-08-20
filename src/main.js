@@ -444,6 +444,12 @@ function gameplay(dt, t) {
     distance, speed, hard: hardMode,
     magnet: power.magnet, runnerX: runner.x, runnerY: runner.y,
     onCrossing: () => say('A freight is crossing ahead. It will be a while.', 'tannoy', 4600),
+    onOncoming: (lane) => {
+      audio.horn();
+      say(['Something is coming the other way. Left track.',
+        'Something is coming the other way. Middle track.',
+        'Something is coming the other way. Right track.'][lane], 'tannoy', 3600);
+    },
   });
 
   const gy = groundHeight();

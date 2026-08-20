@@ -185,6 +185,17 @@ export const CONFIG = {
   FREIGHT_MIN_WAGONS: 3,
   FREIGHT_MAX_WAGONS: 9,
   FREIGHT_LOCO_CHANCE: 0.45, // consists that are headed by a locomotive
+  FLAT_CONSIST_CHANCE: 0.40, // rakes of one wagon type: a train you can run
+  FLAT_CONSIST_MIN: 6,       // and they are long, because that is the point
+  FLAT_CONSIST_MAX: 11,
+
+  // Trains coming the other way. They close at their own speed ON TOP of
+  // yours, so they arrive roughly twice as fast as the scenery does.
+  ONCOMING_MIN_METERS: 650,
+  ONCOMING_MAX_METERS: 1300,
+  ONCOMING_SPEED: 26,
+  ONCOMING_WAGONS_MIN: 7,
+  ONCOMING_WAGONS_MAX: 14,
   CROSSING_MIN_METERS: 1200, // metres between level-crossing set pieces
   CROSSING_MAX_METERS: 2200,
 

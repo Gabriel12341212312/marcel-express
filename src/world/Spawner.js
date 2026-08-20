@@ -13,7 +13,7 @@ import { CONFIG, laneX } from '../config.js';
 import { createObstacle, createCodeSmell, createBug } from '../entities/Obstacles.js';
 import {
   createWagon, createParkedLoco, randomWagonKind,
-  createLevelCrossing, createCrossingFreight,
+  createLevelCrossing, createCrossingFreight, createOncomingTrain,
 } from '../entities/Freight.js';
 import {
   createStoryPoint, createGlowCard, createPowerup,
@@ -55,6 +55,9 @@ export class Spawner {
     this.suppress = 0;
     this.cacheHit = 0;
     this.freeLanes = [0, 1, 2];
+    this.nextOncomingAt = CONFIG.ONCOMING_MIN_METERS
+      + Math.random() * (CONFIG.ONCOMING_MAX_METERS - CONFIG.ONCOMING_MIN_METERS);
+    this.oncoming = null;
     this.lastType = '';
   }
 
@@ -109,12 +112,19 @@ export class Spawner {
    * so the greedy line and the safe line are different lines.
    *
    * @returns {number} the metres of track the consist occupies
+   * @param {number} lane
+   * @param {number} z
+   * @param {number} wagons
+   * @param {string} [uniform] one wagon type for the whole rake — a train you
+   *   can simply RUN along, because every roof is at the same height. Mixed
+   *   stock makes crossing a consist a series of jumps; this makes it a
+   *   sprint, and the two feel completely different underfoot.
    */
-  spawnConsist(lane, z, wagons) {
+  spawnConsist(lane, z, wagons, uniform = null) {
     let cursor = z;
     const roofs = [];
     for (let i = 0; i < wagons; i++) {
-      const kind = randomWagonKind();
+      const kind = uniform ?? randomWagonKind();
       const w = createWagon(kind, pick(WAGON_LABELS));
       this.add(w, lane, cursor);
       roofs.push({ z: cursor + w.length / 2, top: w.top });
@@ -168,6 +178,37 @@ export class Spawner {
     return cross;
   }
 
+  /**
+   * Send a train the other way down one track.
+   *
+   * Fairness is the whole job here. It closes at your speed PLUS its own, so
+   * it arrives about twice as fast as anything else, and it cannot be climbed
+   * or ducked — the only answer is to leave that track. So:
+   *
+   *   - it only goes on a track that is clear for the whole approach, which
+   *     stops it appearing behind standing freight you cannot get past
+   *   - nothing new spawns while it is inbound, so you are solving one problem
+   *   - the horn sounds immediately, and its lamps are drawn unfogged so the
+   *     track it is on reads long before the train itself does
+   */
+  spawnOncoming(onWarn) {
+    const busy = new Set();
+    for (const o of this.obstacles) {
+      if (o.z > -20 && o.z < this.horizon + 260) busy.add(o.lane);
+    }
+    const free = [0, 1, 2].filter((l) => !busy.has(l));
+    if (!free.length) return false;      // try again in a moment
+
+    const lane = pick(free);
+    const train = createOncomingTrain(rndInt(CONFIG.ONCOMING_WAGONS_MIN, CONFIG.ONCOMING_WAGONS_MAX));
+    train.closing = CONFIG.ONCOMING_SPEED;
+    this.add(train, lane, this.horizon + 150);
+    this.oncoming = train;
+    this.suppress = Math.max(this.suppress, 3.2);
+    if (onWarn) onWarn(lane);
+    return true;
+  }
+
   /* ---------------------------- patterns ---------------------------- */
 
   /** One set-up. Returns the lanes that stayed clear. */
@@ -195,10 +236,16 @@ export class Spawner {
         CONFIG.FREIGHT_MIN_WAGONS,
         Math.round(CONFIG.FREIGHT_MIN_WAGONS + (CONFIG.FREIGHT_MAX_WAGONS - CONFIG.FREIGHT_MIN_WAGONS) * prog)
       );
-      // very occasionally, the heritage stock
-      const len = chance(0.05)
-        ? this.spawnHeritageTrain(lane, z)
-        : this.spawnConsist(lane, z, wagons);
+      let len;
+      if (chance(0.05)) {
+        len = this.spawnHeritageTrain(lane, z);       // the works train
+      } else if (chance(CONFIG.FLAT_CONSIST_CHANCE)) {
+        // a long rake of identical stock: one jump on, then just run
+        len = this.spawnConsist(lane, z,
+          rndInt(CONFIG.FLAT_CONSIST_MIN, CONFIG.FLAT_CONSIST_MAX), randomWagonKind());
+      } else {
+        len = this.spawnConsist(lane, z, wagons);
+      }
       free.push(...lanes.filter((l) => l !== lane));
       // once you are past the halfway mark, a second consist sometimes shares
       // the line, leaving exactly one lane open
@@ -292,6 +339,8 @@ export class Spawner {
     // scroll
     for (const o of this.obstacles) {
       o.z -= moved;
+      // an oncoming train closes at its own speed on top of the world scroll
+      if (o.closing) o.z -= o.closing * dt;
       o.group.position.z = o.z;
       if (o.kind === 'bug') {
         o.strafe += dt * 1.5;
@@ -366,6 +415,17 @@ export class Spawner {
       this.spawnPickups(this.horizon + 6, this.freeLanes, ctx);
       this.nextPickupZ = this.horizon + 6 + 30 + Math.random() * 34;
     }
+
+    // a train the other way
+    if (ctx.distance > this.nextOncomingAt) {
+      if (this.spawnOncoming(ctx.onOncoming)) {
+        this.nextOncomingAt = ctx.distance + CONFIG.ONCOMING_MIN_METERS
+          + Math.random() * (CONFIG.ONCOMING_MAX_METERS - CONFIG.ONCOMING_MIN_METERS);
+      } else {
+        this.nextOncomingAt = ctx.distance + 60;   // line was busy, ask again
+      }
+    }
+    if (this.oncoming && (this.oncoming.dead || this.oncoming.z < -60)) this.oncoming = null;
 
     // the crossing, as a rare landmark
     if (ctx.distance > this.nextCrossingAt) {
