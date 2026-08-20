@@ -255,8 +255,13 @@ It is also the one thing in the game with a real warning, because it has to be:
   appears behind freight you cannot get past
 - nothing else spawns while it is inbound — you are solving one problem
 
-Measured over full runs: four to nine of them, and the cautious bot was hit by
-exactly **none**.
+**Being hit by one ends the run.** No stumble, no lost metres — it ignores the
+try/catch shield and the boost as well, because the one thing on the line that
+is always fatal has to be predictable or the warning means nothing.
+
+It passes you, too. Everything else is retired by its centre point, which
+deleted a seventy-metre train while its back half was still on screen in front
+of the camera; long stock is now retired on its **tail**.
 
 ### The line gets denser, not just the locomotive
 

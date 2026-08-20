@@ -379,7 +379,10 @@ export class Spawner {
 
     // retire
     this.obstacles = this.obstacles.filter((o) => {
-      if (o.z < -46 || o.dead) { this.group.remove(o.group); return false; }
+      // Retire on the TAIL, not the centre. A seventy-metre train measured by
+      // its centre was being deleted while its back half was still on screen
+      // in front of the camera — it appeared to vanish rather than pass you.
+      if (o.z + o.halfD < -46 || o.dead) { this.group.remove(o.group); return false; }
       return true;
     });
     this.pickups = this.pickups.filter((p) => {

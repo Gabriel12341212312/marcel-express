@@ -328,18 +328,32 @@ export function createOncomingTrain(wagonCount = 10) {
     z += WAGONS[kind].len + 0.55;
   }
 
+  // Re-centre everything on the group origin.
+  //
+  // The train is built with the locomotive at local zero and the rake running
+  // away behind it, so the origin sat at the FRONT rather than the middle —
+  // which put the collision volume some thirty-five metres ahead of the train
+  // you can actually see. Shifting the contents fixes the hitbox and the
+  // draw position together, which is the only way they can be trusted to
+  // agree.
+  const start = -locoLen / 2;
+  const end = z;
+  const centre = (start + end) / 2;
+  for (const child of g.children) child.position.z -= centre;
+
+  const halfD = (end - start) / 2;
   return {
     group: g,
     kind: 'obstacle',
     family: 'oncoming',
     def: { id: 'ONCOMING', label: 'ONCOMING', crash: 'That one was coming the other way.' },
     halfW: HALF_W + 0.08,
-    halfD: z / 2,
+    halfD,
     bottom: 0,
     top: 3.1,
     mountable: false,     // you do not board a train doing 26 m/s at you
-    zOffset: z / 2 - locoLen / 2,
-    length: z,
+    zOffset: halfD,       // spawn reference is the locomotive, its leading end
+    length: end - start,
     lamps,
   };
 }

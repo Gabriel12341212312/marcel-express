@@ -245,10 +245,19 @@ function closeTerminal() {
 }
 
 function beginCatch() {
+  loseTo(pick(CAUGHT_LINES));
+}
+
+/**
+ * End the run. Marcel catching you is the usual way; running into something
+ * that was coming the other way is the other one, and it needs its own line
+ * because "Build failed" makes no sense when a train just went through you.
+ */
+function loseTo(line) {
   if (state !== 'RUNNING') return;
   state = 'CAUGHT';
   catchTimer = 0;
-  caughtLine = pick(CAUGHT_LINES);
+  caughtLine = line;
   audio.horn();
   hud.say(caughtLine, 'marcel', 5000);
   hud.setThreat(1);
@@ -284,6 +293,16 @@ function groundHeight() {
 }
 
 function crash(o) {
+  // A head-on with seventy metres of train is not a stumble. It ignores the
+  // shield and the boost on purpose: it is the one thing on the line that is
+  // always fatal, and that has to be predictable or the warning means nothing.
+  if (o.family === 'oncoming') {
+    crashes++;
+    o.hitDone = true;
+    audio.crash();
+    loseTo('That one was coming the other way.');
+    return;
+  }
   if (power.invincible) { o.dead = true; audio.sweep(); return; }
   if (power.catchException()) {
     o.dead = true;

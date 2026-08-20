@@ -253,7 +253,7 @@ for (let frame = 0; frame < 60 * SECONDS && !caught; frame++) {
     if (power.invincible) { o.dead = true; continue; }
     if (power.catchException()) { o.dead = true; continue; }
     crashes++; momentum = 0; o.hitDone = true; runner.stumble();
-    if (o.family === 'oncoming') seen.oncomingHits++;
+    if (o.family === 'oncoming') { seen.oncomingHits++; caught = true; caughtAt = { distance, t }; }
     marcel.closeIn(HARD ? CONFIG.HARD_CRASH_PENALTY : CONFIG.MARCEL_CRASH_PENALTY);
   }
 
