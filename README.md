@@ -306,6 +306,35 @@ That is the whole list.
 | `steel toecaps` | jump 4.98 m instead of 1.54 — over anything, including a train coming the other way |
 | `deploy --airborne` | the jetpack |
 
+### The rubber boots
+
+A power-up you cannot see is a power-up nobody believes in. The plain shoe is
+**6.7 x 3.9 px** from the calm camera framing — grey-white, unlit, and at that
+size a recoloured shoe says nothing at all. So the boot is not a recolour: the
+shoe is hidden and a different object takes its place.
+
+```
+plain shoe    6.7 x  3.9 px   #e8e4dc, lit only by the scene
+rubber boot  12.0 x 14.7 px   #9ae06a with its own emissive   (x6.8 the area)
+  + halo     40.6 px          additive, per foot
+```
+
+The green is the power-up chip's own `0x9ae06a`, so the thing you picked up and
+the thing on your feet are visibly the same thing. Under the shell sit three
+thin plates in alternating green and dark: the spring you are jumping on.
+
+The sole ends up 0.21 m below where the shoe's was, so the hips are lifted by
+exactly that much while the boots are worn — eased in and out, so putting them
+on is a rise rather than a pop. Measured across a three-second stride the
+planted foot touches at **0.005 m** booted against **0.013 m** plain, an 8 mm
+drift you cannot see. The lift is applied to the hips and not to the group,
+because the hitbox is derived from `this.y` and nothing else: standing taller
+must not change what you can hit.
+
+Every boosted take-off leaves a green ring on the ballast, expanding to x4.4
+and gone in under a second. It is the only feedback that fires at the moment
+the jump does.
+
 ### The jetpack
 
 Straight up to 9.6 m — over the contact wires at 8.6 and the gantry boom at

@@ -483,7 +483,7 @@ function gameplay(dt, t) {
     },
   });
 
-  runner.sneakers = power.has('SNEAKERS');
+  runner.setSneakers(power.has('SNEAKERS'));
   if (!runner.flying) runner.setJetpackVisible(power.has('JETPACK'));
 
   const gy = groundHeight();

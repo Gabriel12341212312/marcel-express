@@ -11,12 +11,15 @@
  */
 import * as THREE from 'three';
 import { CONFIG, laneX } from '../config.js';
+import { glowSprite } from '../world/textures.js';
 
 const SKIN = 0xd8a877;
 const HOODIE = 0x2f6ea8;
 const HOODIE_DARK = 0x24557f;
 const JEANS = 0x2a2f3a;
 const SHOE = 0xe8e4dc;
+const BOOT = 0x9ae06a;        // the same green as the power-up chip
+const BOOT_GLOW = 0x24401a;
 
 function box(w, h, d, color) {
   const m = new THREE.Mesh(
@@ -51,6 +54,7 @@ export class Runner {
     this.flightPhase = 'climb';
     this.flightTime = 0;
     this.sneakers = false;
+    this.bootLift = 0;
 
     this.runPhase = 0;
     this.tilt = 0;
@@ -67,7 +71,7 @@ export class Runner {
 
     // hips are the animation root; everything hangs off them
     this.hips = new THREE.Group();
-    this.hips.position.y = 0.92;
+    this.hips.position.y = this.hipBase();
     this.body.add(this.hips);
 
     this.torso = box(0.52, 0.62, 0.32, HOODIE);
@@ -133,7 +137,50 @@ export class Runner {
       const foot = box(0.19, 0.11, 0.3, SHOE);
       foot.position.set(0, -0.42, 0.06);
       knee.add(foot);
-      this.legs.push({ hip, knee, side: s });
+
+      // The rubber boots.
+      //
+      // At this camera distance the runner is about a tenth of the screen and
+      // the feet are a couple of pixels, so a recoloured shoe would say
+      // nothing. These are deliberately oversized, in the power-up's own
+      // green, with their own emissive so they hold up against the ballast,
+      // and each one carries a small additive glow that survives being tiny.
+      const boot = new THREE.Group();
+      boot.visible = false;
+      boot.position.set(0, -0.40, 0.04);
+      knee.add(boot);
+
+      const shell = new THREE.Mesh(
+        new THREE.BoxGeometry(0.30, 0.26, 0.42),
+        new THREE.MeshLambertMaterial({ color: BOOT, emissive: BOOT_GLOW })
+      );
+      boot.add(shell);
+
+      // a stack of thinner plates under it: the spring you are jumping on
+      for (let i = 0; i < 3; i++) {
+        const plate = new THREE.Mesh(
+          new THREE.BoxGeometry(0.34 - i * 0.03, 0.05, 0.44 - i * 0.03),
+          new THREE.MeshLambertMaterial({
+            color: i % 2 ? 0x2a3a24 : BOOT,
+            emissive: i % 2 ? 0x000000 : BOOT_GLOW,
+          })
+        );
+        plate.position.y = -0.16 - i * 0.05;
+        boot.add(plate);
+      }
+
+      const halo = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: glowSprite(BOOT),
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        transparent: true,
+        opacity: 0.75,
+      }));
+      halo.scale.setScalar(1.15);
+      halo.position.y = -0.14;
+      boot.add(halo);
+
+      this.legs.push({ hip, knee, side: s, foot, boot });
     }
 
     // laptop backpack: reads instantly from behind, which is the only angle
@@ -182,6 +229,19 @@ export class Runner {
     this.shield.position.y = 1.0;
     this.shield.visible = false;
     g.add(this.shield);
+
+    // the ring a boosted take-off leaves behind
+    this.ring = new THREE.Mesh(
+      new THREE.RingGeometry(0.3, 0.52, 22),
+      new THREE.MeshBasicMaterial({
+        color: BOOT, transparent: true, opacity: 0, depthWrite: false,
+        side: THREE.DoubleSide, blending: THREE.AdditiveBlending, toneMapped: false,
+      })
+    );
+    this.ring.rotation.x = -Math.PI / 2;
+    this.ring.visible = false;
+    this.ringLife = 0;
+    g.add(this.ring);
   }
 
   /* ---------------------------- control ---------------------------- */
@@ -210,6 +270,7 @@ export class Runner {
     this.rolling = false;
     this.rollTimer = 0;
     this.vy = CONFIG.JUMP_VELOCITY * (this.sneakers ? CONFIG.SNEAKER_JUMP_MULT : 1);
+    if (this.sneakers) this.kickRing();
     return true;
   }
 
@@ -332,6 +393,20 @@ export class Runner {
       }
     }
 
+ // The lift eases in and out so putting the boots on is a rise, not a pop.
+       const wantLift = this.sneakers ? 0.21 : 0;
+       this.bootLift += (wantLift - this.bootLift) * Math.min(1, dt * 9);
+   
+       // the take-off ring expands and fades where it was left
+    if (this.ringLife > 0) {
+      this.ringLife = Math.max(0, this.ringLife - dt * 2.6);
+      const grow = 1 + (1 - this.ringLife) * 3.4;
+      this.ring.scale.setScalar(grow);
+      this.ring.material.opacity = this.ringLife * 0.7;
+      this.ring.position.y = 0.05 - this.y;      // stays on the ballast
+      if (this.ringLife === 0) this.ring.visible = false;
+    }
+
     this.animate(dt, speed);
 
     this.group.position.set(this.x, this.y, 0);
@@ -353,7 +428,7 @@ export class Runner {
       // tuck: fold the whole body forward and spin it
       const t = 1 - this.rollTimer / CONFIG.ROLL_DURATION;
       this.body.rotation.x = Math.sin(Math.min(1, t) * Math.PI) * 1.5;
-      this.hips.position.y = 0.92 - Math.sin(Math.min(1, t) * Math.PI) * 0.42;
+      this.hips.position.y = this.hipBase() - Math.sin(Math.min(1, t) * Math.PI) * 0.42;
       for (const l of this.legs) {
         l.hip.rotation.x = -1.1;
         l.knee.rotation.x = 1.6;
@@ -372,7 +447,7 @@ export class Runner {
     if (airborne) {
       // tuck-and-reach jump pose, blended by vertical velocity
       const up = THREE.MathUtils.clamp(this.vy / CONFIG.JUMP_VELOCITY, -1, 1);
-      this.hips.position.y = 0.92;
+      this.hips.position.y = this.hipBase();
       for (const l of this.legs) {
         l.hip.rotation.x = -0.7 + up * 0.35 * l.side;
         l.knee.rotation.x = 1.0 - up * 0.4;
@@ -389,7 +464,7 @@ export class Runner {
     const swing = Math.sin(p);
     const swing2 = Math.sin(p + Math.PI);
     const bob = Math.abs(Math.sin(p)) * 0.07;
-    this.hips.position.y = 0.92 + bob;
+    this.hips.position.y = this.hipBase() + bob;
     this.body.rotation.x = -0.13 - (this.stumbling ? 0.25 : 0);
 
     this.legs[0].hip.rotation.x = swing * 0.95;
@@ -438,7 +513,7 @@ export class Runner {
     // a slow wallow, so cruising is not a frozen pose
     const wallow = Math.sin(p * 0.9) * 0.05;
     this.body.rotation.x = pitch + wallow;
-    this.hips.position.y = 0.92;
+    this.hips.position.y = this.hipBase();
     this.head.rotation.x = -pitch * 0.55;   // he keeps looking where he is going
 
     for (const l of this.legs) {
@@ -461,6 +536,39 @@ export class Runner {
       f.scale.set(0.42 * flicker, (0.55 + push * 1.5) * flicker, 1);
       f.material.opacity = (0.5 + push * 0.5) * flicker;
     }
+  }
+
+  /**
+   * Where the hips ride.
+   *
+   * The boot sole sits about 0.21 m below the shoe.s, so without this the
+   * runner would stand ankle-deep in the ballast. Lifting the hips rather
+   * than the group keeps the hitbox - which is derived from this.y and
+   * nothing else - exactly where it was, and it reads as what it is: you
+   * stand taller because you are standing on springs.
+   */
+  hipBase() {
+    return 0.92 + this.bootLift;
+  }
+
+  /**
+   * Put the boots on, or take them off. The ordinary shoe is hidden while
+   * they are worn, so the silhouette changes rather than just the colour.
+   */
+  setSneakers(on) {
+    // No early-out on an unchanged flag: reset() clears this.sneakers before it
+    // calls us, and a guard there would leave the boots on the model.
+    this.sneakers = on;
+    for (const l of this.legs) {
+      l.boot.visible = on;
+      l.foot.visible = !on;
+    }
+  }
+
+  /** A green ring left on the ballast where a boosted jump took off. */
+  kickRing() {
+    this.ring.visible = true;
+    this.ringLife = 1;
   }
 
   setJetpackVisible(on) {
@@ -510,5 +618,9 @@ export class Runner {
     this.group.rotation.set(0, 0, 0);
     this.shield.visible = false;
     this.setJetpackVisible(false);
+    this.setSneakers(false);
+    this.bootLift = 0;
+    this.ring.visible = false;
+    this.ringLife = 0;
   }
 }
