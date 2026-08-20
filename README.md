@@ -311,7 +311,11 @@ That is the whole list.
 Straight up to 9.6 m — over the contact wires at 8.6 and the gantry boom at
 9.2 — cruise for seven seconds, then back down. Nothing on the line can touch
 you up there, and a line of story points is laid out ahead of you, waving
-gently across the three tracks so it is still steering rather than a cutscene.
+gently across the three tracks.
+
+Measured over a full flight: fly straight and you collect **29%** of the line;
+follow it across the tracks and you collect **100%**. So it is still steering
+rather than a cutscene.
 
 The pose does the work, and it is three attitudes rather than one:
 
